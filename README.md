@@ -30,12 +30,12 @@ A comprehensive Unity Editor tool for managing Addressable Assets efficiently. T
 ## Installation
 
 1. Copy `AddressableBatchTool.cs` to your Unity project's `Editor` folder
-2. The tool will appear under `Tools → Addressables → Batch Tool`
+2. The tool will appear under `Tools → Addressable → Addressable Manager Tool`
 
 ## Usage
 
 ### Opening the Tool
-Navigate to `Tools → Addressables → Batch Tool` in Unity's menu bar.
+Navigate to `Tools → Addressable → Addressable Manager Tool` in Unity's menu bar.
 
 ### Batch Rename Tab
 1. Enter desired **Prefix** and/or **Suffix**
