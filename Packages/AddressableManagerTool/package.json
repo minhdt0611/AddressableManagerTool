@@ -1,6 +1,6 @@
 {
   "name": "com.yourname.addressable-manager-tool",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "displayName": "Addressable Manager Tool",
   "description": "A comprehensive Unity Editor tool for managing Addressable Assets with batch rename, group management, and key generation features.",
   "unity": "2021.3",
