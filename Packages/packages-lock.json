@@ -242,6 +242,14 @@
       },
       "url": "https://packages.unity.com"
     },
+    "com.yourname.addressable-manager-tool": {
+      "version": "file:AddressableManagerTool",
+      "depth": 0,
+      "source": "embedded",
+      "dependencies": {
+        "com.unity.addressables": "1.19.19"
+      }
+    },
     "com.unity.modules.ai": {
       "version": "1.0.0",
       "depth": 0,

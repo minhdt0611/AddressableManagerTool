@@ -1,79 +1,140 @@
-name: Create Unity Package Release
+name: 🚀 Create Unity Package Release (Subdirectory)
 
 on:
   push:
     tags:
-      - 'v*'
+      - 'v*.*.*'
+
+env:
+  PACKAGE_PATH: "Packages/AddressableManagerTool"
 
 jobs:
-  release:
+  create-release:
+    name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    
     steps:
-    - name: Checkout
-      uses: actions/checkout@v3
+    - name: 📥 Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
     
-    - name: Get version from tag
+    - name: 🏷️ Get Version from Tag
       id: get_version
-      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
-    
-    - name: Update package.json version
       run: |
-        sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.get_version.outputs.VERSION }}\"/" package.json
+        VERSION=${GITHUB_REF#refs/tags/v}
+        echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+        echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+        echo "Release version: $VERSION"
     
-    - name: Create Unity Package
+    - name: ✅ Validate Package Structure
       run: |
-        # Create .unitypackage (zip format with specific structure)
-        zip -r AddressableManagerTool-${{ steps.get_version.outputs.VERSION }}.unitypackage \
+        if [ ! -f "$PACKAGE_PATH/package.json" ]; then
+          echo "❌ package.json not found at $PACKAGE_PATH/package.json!"
+          exit 1
+        fi
+        echo "✅ Package structure validated at $PACKAGE_PATH"
+    
+    - name: 📝 Update package.json Version
+      run: |
+        cd "$PACKAGE_PATH"
+        
+        # Create backup
+        cp package.json package.json.bak
+        
+        # Update version
+        if command -v jq &> /dev/null; then
+          jq --arg version "${{ steps.get_version.outputs.VERSION }}" '.version = $version' package.json > package.json.tmp
+          mv package.json.tmp package.json
+        else
+          sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.get_version.outputs.VERSION }}\"/" package.json
+        fi
+        
+        echo "✅ Updated package.json version to ${{ steps.get_version.outputs.VERSION }}"
+        grep "version" package.json
+    
+    - name: 📦 Create Unity Package
+      run: |
+        PACKAGE_NAME="AddressableManagerTool-${{ steps.get_version.outputs.VERSION }}"
+        
+        echo "🔧 Creating Unity Package: ${PACKAGE_NAME}.unitypackage"
+        
+        # Create package from subdirectory
+        cd "$PACKAGE_PATH"
+        zip -r "../../${PACKAGE_NAME}.unitypackage" \
           package.json \
           README.md \
-          CHANGELOG.md \
-          LICENSE.md \
+          LICENSE* \
+          CHANGELOG* \
           Editor/ \
           Runtime/ \
           Documentation~/ \
           Samples~/ \
-          -x "*.meta" "*.DS_Store" "*/.git/*"
-    
-    - name: Generate changelog
-      id: changelog
-      run: |
-        if [ -f CHANGELOG.md ]; then
-          # Extract latest version changelog
-          awk '/^## / { if (++count == 2) exit } count >= 1' CHANGELOG.md > latest_changes.md
+          -x "*.meta" "*/.git/*" "*.DS_Store" "*/.vs/*" "*/bin/*" "*/obj/*"
+        
+        cd ../..
+        
+        # Verify package was created
+        if [ -f "${PACKAGE_NAME}.unitypackage" ]; then
+          SIZE=$(du -h "${PACKAGE_NAME}.unitypackage" | cut -f1)
+          echo "✅ Package created successfully: ${SIZE}"
+          echo "PACKAGE_FILE=${PACKAGE_NAME}.unitypackage" >> $GITHUB_OUTPUT
         else
-          echo "## Changes in v${{ steps.get_version.outputs.VERSION }}" > latest_changes.md
-          echo "- See commit history for details" >> latest_changes.md
+          echo "❌ Failed to create package"
+          exit 1
         fi
+      id: create_package
     
-    - name: Create Release
+    - name: 📋 Generate Release Notes
+      run: |
+        RELEASE_NOTES_FILE="release_notes.md"
+        
+        echo "# 🎉 AddressableManagerTool ${{ steps.get_version.outputs.TAG_NAME }}" > $RELEASE_NOTES_FILE
+        echo "" >> $RELEASE_NOTES_FILE
+        echo "## 📝 What's Changed" >> $RELEASE_NOTES_FILE
+        
+        # Try to extract changelog
+        if [ -f "$PACKAGE_PATH/CHANGELOG.md" ]; then
+          awk -v version="## \\[${{ steps.get_version.outputs.VERSION }}\\]" '
+            $0 ~ version {found=1; next} 
+            found && /^## / {exit} 
+            found {print}
+          ' "$PACKAGE_PATH/CHANGELOG.md" >> $RELEASE_NOTES_FILE
+        fi
+        
+        # Add installation instructions
+        echo "" >> $RELEASE_NOTES_FILE
+        echo "## 📥 Installation Methods" >> $RELEASE_NOTES_FILE
+        echo "" >> $RELEASE_NOTES_FILE
+        echo "### 🎯 Method 1: Unity Package Manager (Git URL)" >> $RELEASE_NOTES_FILE
+        echo "1. Open Unity Editor" >> $RELEASE_NOTES_FILE
+        echo "2. Go to \`Window → Package Manager\`" >> $RELEASE_NOTES_FILE
+        echo "3. Click \`+\` button → \`Add package from git URL\`" >> $RELEASE_NOTES_FILE
+        echo "4. Enter:" >> $RELEASE_NOTES_FILE
+        echo "\`\`\`" >> $RELEASE_NOTES_FILE
+        echo "https://github.com/${{ github.repository }}.git?path=/$PACKAGE_PATH#${{ steps.get_version.outputs.TAG_NAME }}" >> $RELEASE_NOTES_FILE
+        echo "\`\`\`" >> $RELEASE_NOTES_FILE
+        echo "" >> $RELEASE_NOTES_FILE
+        echo "### 📦 Method 2: Unity Package File" >> $RELEASE_NOTES_FILE
+        echo "1. Download \`${{ steps.create_package.outputs.PACKAGE_FILE }}\` below" >> $RELEASE_NOTES_FILE
+        echo "2. In Unity: \`Assets → Import Package → Custom Package\`" >> $RELEASE_NOTES_FILE
+        echo "" >> $RELEASE_NOTES_FILE
+        echo "## ⚙️ Requirements" >> $RELEASE_NOTES_FILE
+        echo "- Unity 2021.3 or later" >> $RELEASE_NOTES_FILE
+        echo "- Addressables package (\`com.unity.addressables\`) 1.19.19 or later" >> $RELEASE_NOTES_FILE
+    
+    - name: 🚀 Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
-        name: "Addressable Manager Tool v${{ steps.get_version.outputs.VERSION }}"
-        body_path: latest_changes.md
-        files: |
-          AddressableManagerTool-${{ steps.get_version.outputs.VERSION }}.unitypackage
-          package.json
+        name: "🎯 AddressableManagerTool ${{ steps.get_version.outputs.TAG_NAME }}"
+        tag_name: ${{ steps.get_version.outputs.TAG_NAME }}
+        body_path: release_notes.md
         draft: false
         prerelease: false
-        generate_release_notes: true
-        append_body: |
-          
-          ## Installation Methods
-          
-          ### 📦 Unity Package Manager (Recommended)
-          Add this Git URL in Package Manager:
-          ```
-          https://github.com/${{ github.repository }}.git#v${{ steps.get_version.outputs.VERSION }}
-          ```
-          
-          ### 📁 Unity Package File
-          Download the `.unitypackage` file above and import via:
-          `Assets → Import Package → Custom Package`
-          
-          ### 🔧 Manual Installation
-          1. Download source code
-          2. Extract to `Packages/com.yourname.addressable-manager-tool/`
-          
-          ## Requirements
-          - Unity 2021.3 or later
-          - Addressables package (com.unity.addressables) 1.19.19+
+        files: |
+          ${{ steps.create_package.outputs.PACKAGE_FILE }}
+          ${{ env.PACKAGE_PATH }}/package.json
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
