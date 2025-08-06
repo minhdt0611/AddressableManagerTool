@@ -1,0 +1,22 @@
+{
+  "name": "com.yourname.addressable-manager-tool",
+  "version": "1.0.0",
+  "displayName": "Addressable Manager Tool",
+  "description": "A comprehensive Unity Editor tool for managing Addressable Assets with batch rename, group management, and key generation features.",
+  "unity": "2021.3",
+  "unityRelease": "0b5",
+  "keywords": [
+    "addressables",
+    "editor",
+    "tool",
+    "utility",
+    "asset-management"
+  ],
+  "author": {
+    "name": "Dao Thanh Minh",
+    "url": "https://github.com/minhdt0611"
+  },
+  "dependencies": {
+    "com.unity.addressables": "1.19.19"
+  }
+}

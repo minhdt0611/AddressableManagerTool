@@ -1,0 +1,79 @@
+name: Create Unity Package Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    
+    - name: Get version from tag
+      id: get_version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+    
+    - name: Update package.json version
+      run: |
+        sed -i "s/\"version\": \".*\"/\"version\": \"${{ steps.get_version.outputs.VERSION }}\"/" package.json
+    
+    - name: Create Unity Package
+      run: |
+        # Create .unitypackage (zip format with specific structure)
+        zip -r AddressableManagerTool-${{ steps.get_version.outputs.VERSION }}.unitypackage \
+          package.json \
+          README.md \
+          CHANGELOG.md \
+          LICENSE.md \
+          Editor/ \
+          Runtime/ \
+          Documentation~/ \
+          Samples~/ \
+          -x "*.meta" "*.DS_Store" "*/.git/*"
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        if [ -f CHANGELOG.md ]; then
+          # Extract latest version changelog
+          awk '/^## / { if (++count == 2) exit } count >= 1' CHANGELOG.md > latest_changes.md
+        else
+          echo "## Changes in v${{ steps.get_version.outputs.VERSION }}" > latest_changes.md
+          echo "- See commit history for details" >> latest_changes.md
+        fi
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: "Addressable Manager Tool v${{ steps.get_version.outputs.VERSION }}"
+        body_path: latest_changes.md
+        files: |
+          AddressableManagerTool-${{ steps.get_version.outputs.VERSION }}.unitypackage
+          package.json
+        draft: false
+        prerelease: false
+        generate_release_notes: true
+        append_body: |
+          
+          ## Installation Methods
+          
+          ### 📦 Unity Package Manager (Recommended)
+          Add this Git URL in Package Manager:
+          ```
+          https://github.com/${{ github.repository }}.git#v${{ steps.get_version.outputs.VERSION }}
+          ```
+          
+          ### 📁 Unity Package File
+          Download the `.unitypackage` file above and import via:
+          `Assets → Import Package → Custom Package`
+          
+          ### 🔧 Manual Installation
+          1. Download source code
+          2. Extract to `Packages/com.yourname.addressable-manager-tool/`
+          
+          ## Requirements
+          - Unity 2021.3 or later
+          - Addressables package (com.unity.addressables) 1.19.19+
