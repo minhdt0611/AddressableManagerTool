@@ -1,0 +1,9 @@
+diff a/README.md b/README.md	(rejected hunks)
+@@ -30,7 +30,6 @@
+ ## Installation
+ 
+ 1. Copy `AddressableBatchTool.cs` to your Unity project's `Editor` folder
+-2. The tool will appear under `Tools → Addressables → Batch Tool`
+ 2. The tool will appear under `Tools → Addressable → Addressable Manager Tool`
+ 
+ ## Usage
