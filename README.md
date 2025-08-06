@@ -21,16 +21,11 @@ A comprehensive Unity Editor tool for managing Addressable Assets with batch ren
 1. Open Unity
 2. Go to `Window → Package Manager`
 3. Click the `+` button and select `Add package from git URL`
-4. Enter: `https://github.com/yourusername/AddressableManagerTool.git`
+4. Enter: `https://github.com/minhdt0611/AddressableManagerTool.git`
 
 ### Method 2: Download and Import
 1. Download the latest release from [GitHub Releases](https://github.com/yourusername/AddressableManagerTool/releases)
 2. Import the `.unitypackage` file via `Assets → Import Package → Custom Package`
-
-### Method 3: Manual Installation
-1. Download or clone this repository
-2. Copy the entire folder to your project's `Packages/` directory
-3. Rename the folder to `com.yourname.addressable-manager-tool`
 
 ## Usage
 
@@ -102,4 +97,4 @@ The tool automatically saves your settings:
 
 ## Support
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/yourusername/AddressableManagerTool/issues) page.
+For issues and feature requests, please use the [GitHub Issues](https://github.com/minhdt0611/AddressableManagerTool/issues) page.
